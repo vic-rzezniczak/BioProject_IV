@@ -37,43 +37,57 @@ vector<int> MapOfCuts;///obvious, to be filled in main
 vector<vector<int>> Instance;///one is value, second is 'boolean' flag
 int MapLen, n;///to be filled
 
+int binomial(int n, int k)
+{
+    int num = 1, den = 1;
+    for (int i = 1; i <= k; i++) den *= i;
+    for (int j = ((n - k) + 1); j <= n; j++) num *= j;
+    return(num / den);
+}
+
 void FileRead(string filename)
 {
     ifstream input;
     string line, num;
-    input.open("Instancje/" + filename + ".txt");
+    input.open("data/" + filename + ".txt");
     Instance.clear();///
     Instance.push_back(vector<int>());
     Instance.push_back(vector<int>());
 
     if(!input.good())///when something goes wrong
-    {
-        cout<<"Blad otwarcia"<<endl;
-        system("pause");
-        exit(0);
-    }
-    while(input.good())
-    {
-        input>>line;
-        num.clear();
-        for(int i = 0; i < line.size(); i++)
         {
-            if(isdigit(line[i])) num.push_back(line[i]);
+            cout<<"Blad otwarcia"<<endl;
+            system("pause");
+            exit(0);
         }
-        int k = atoi(num.c_str());
-        Instance[0].push_back(k);
-        Instance[1].push_back(0);
-    }
+    while(input.good())
+        {
+            input>>line;
+            num.clear();
+            for(int i = 0; i < line.size(); i++)
+                {
+                    if(isdigit(line[i])) num.push_back(line[i]);
+                }
+            int k = atoi(num.c_str());
+            Instance[0].push_back(k);
+            Instance[1].push_back(0);
+        }
     input.close();
 
     cout<<endl<<"Instancja '"<<filename<<"':"<<endl;
     for(int i = 0; i < Instance[0].size(); i++) cout<<Instance[0][i]<<" ";
 };
 
-int CheckCutNum(int ElemCnt)///thats gonna be a check
+int CheckCutNum(int elem_cnt)///thats gonna be a check
 {
-    float num = ((1 + sqrtf(1 + 8 * ElemCnt) ) / 2) - 1;
-    return num;
+    int k = 0, n = 0;
+    while(n <= elem_cnt)
+        {
+            n = binomial(k + 2, 2);
+            k++;
+        }
+    //if(binomial(k + 1, 2) != elem_cnt) return 1;
+    return k - 1;
 };
 
 int Sum(vector<int> tmp)
@@ -95,6 +109,7 @@ void GetSetFirstElem(vector<vector<int>> tmp)
 
 bool CheckAnswer(vector<int> tmp_answer, int elem)///check if it fits to a map
 {
+    vector<int> tmp_inst = Instance[0];///
     int k = 2;///pair, couple of three and whatever is next
     int x = 0;
     vector<int> tmp;///sum every k-elem subcontainer
@@ -102,22 +117,86 @@ bool CheckAnswer(vector<int> tmp_answer, int elem)///check if it fits to a map
     tmp_answer.push_back(elem);///add hipothetical element
 
     if(tmp_answer.size() == 1) return true;///obvious
-    while(k <= tmp_answer.size())///checking k-elem
-    {
-        for(int i = 0; i < tmp_answer.size() - (k - 1); i++)///we dont want to jump into std::bad_alloc
+    for(auto it = tmp_answer.begin(); it < tmp_answer.end(); ++it)///checking 1-elem
         {
-            x = 0;
-            tmp.clear();
-            for(int j = 1; j <= k; j++)///do k times
-            {
-                tmp.push_back(tmp_answer[i + x]);
-                x++;
-            }
-            if(find(Instance[0].begin(), Instance[0].end(), Sum(tmp)) == Instance[0].end()) return false;
-            else continue;
+            if(find(tmp_inst.begin(), tmp_inst.end(), *it) == tmp_inst.end()) return false;
+            else
+                {
+                    auto er = find(tmp_inst.begin(), tmp_inst.end(), *it);
+                    tmp_inst.erase(er);
+                }
         }
-        k++;
-    }
+    while(k <= tmp_answer.size())/*checking k-elem*/
+        {
+            for(int i = 0; i < tmp_answer.size() - (k - 1); i++)///we dont want to jump into std::bad_alloc
+                {
+                    x = 0;
+                    tmp.clear();
+                    for(int j = 1; j <= k; j++)///do k times
+                        {
+                            tmp.push_back(tmp_answer[i + x]);
+                            x++;
+                        }
+                    if(find(tmp_inst.begin(), tmp_inst.end(), Sum(tmp)) == tmp_inst.end()) return false;
+                    else
+                        {
+                            auto er = find(tmp_inst.begin(), tmp_inst.end(), Sum(tmp));
+                            tmp_inst.erase(er);
+                            continue;
+                        }
+                }
+            k++;
+            //tmp_inst.erase(find(tmp_inst.begin(), tmp_inst.end(), Sum(tmp)));
+        }
+    return true;
+};
+
+bool CheckAnswer2(vector<int> tmp_answer/*, int elem*/)///check if it fits to a map
+{
+    vector<int> tmp_inst = Instance[0];///
+    int k = 2;///pair, couple of three and whatever is next
+    int x = 0;
+    vector<int> tmp;///sum every k-elem subcontainer
+
+    //tmp_answer.push_back(elem);///add hipothetical element
+    cout<<endl;//
+    for(auto it = tmp_inst.begin(); it != tmp_inst.end(); ++it) cout<<*it<<" ";//
+    if(tmp_answer.size() == 1) return true;///obvious
+    for(auto it = tmp_answer.begin(); it < tmp_answer.end(); ++it)
+        {
+            cout<<endl;//
+            for(auto it = tmp_inst.begin(); it != tmp_inst.end(); ++it) cout<<*it<<" ";//
+            cout<<endl<<*it;
+            if(find(tmp_inst.begin(), tmp_inst.end(), *it) == tmp_inst.end()) return false;
+            else
+                {
+                    auto er = find(tmp_inst.begin(), tmp_inst.end(), *it);
+                    tmp_inst.erase(er);
+                }
+        }
+    while(k <= tmp_answer.size())///checking k-elem
+        {
+
+            for(int i = 0; i < tmp_answer.size() - (k - 1); i++)///we dont want to jump into std::bad_alloc
+                {
+                    x = 0;
+                    tmp.clear();
+                    cout<<endl;
+                    for(int j = 1; j <= k; j++)///do k times
+                        {
+                            tmp.push_back(tmp_answer[i + x]);
+                            x++;
+                            cout<<tmp.back()<<" ";
+                            //cout<<tmp_answer[i + x]<<" ";
+                        }
+                    if(find(tmp_inst.begin(), tmp_inst.end(), Sum(tmp)) == tmp_inst.end()) return false;
+                    else tmp_inst.erase(find(tmp_inst.begin(), tmp_inst.end(), Sum(tmp)));
+                    cout<<endl;//
+                    for(auto it = tmp_inst.begin(); it != tmp_inst.end(); ++it) cout<<*it<<" ";//
+                }
+            k++;
+
+        }
     return true;
 };
 
@@ -126,33 +205,34 @@ void GiveMeMapOfCutsPlease(vector<vector<int>> tmp, vector<int> answer)
     vector<vector<int>> local_tmp;///local copies
     vector<int> local_answer;
     for(auto it = tmp[0].begin(); it != tmp[0].end(); ++it)
-    {
-        local_tmp = tmp;///they cannot be assigned out of loop
-        local_answer = answer;
-        int index = distance(tmp[0].begin(), it);///to know what should be marked as used
-        if((Sum(local_answer) + *it) <= MapLen)///hipothesis
         {
-            if(CheckAnswer(local_answer, *it) == true)
-            {
-                if(local_tmp[1][index] == 0)///if it is unused
+            local_tmp = tmp;///they cannot be assigned out of loop
+            local_answer = answer;
+            int index = distance(tmp[0].begin(), it);///to know what should be marked as used
+            if((Sum(local_answer) + *it) <= MapLen)///hipothesis
                 {
-                    local_answer.push_back(*it);
-                    local_tmp[1][index] = 1;///mark as used
-                    if(Sum(local_answer) != MapLen) GiveMeMapOfCutsPlease(local_tmp, local_answer);///backtrack
-                    else if(Sum(local_answer) == MapLen && local_answer.size() == n)///we have finished
-                    {
-                        MapOfCuts = local_answer;
-                        return;
-                    }
+                    if(CheckAnswer(local_answer, *it) == true)
+                        {
+                            if(local_tmp[1][index] == 0)///if it is unused
+                                {
+                                    local_answer.push_back(*it);
+                                    local_tmp[1][index] = 1;///mark as used
+                                    if(Sum(local_answer) != MapLen) GiveMeMapOfCutsPlease(local_tmp, local_answer);///backtrack
+                                    else if(Sum(local_answer) == MapLen && local_answer.size() == n)///we have finished
+                                        {
+                                            MapOfCuts = local_answer;
+                                            return;
+                                        }
+                                }
+                        }
                 }
-            }
         }
-    }
 };
 
 main()
 {
-    FileRead(FILES[11]);///obvious
+    //cout<<endl<<binomial(Instance[0].size())
+    FileRead(FILES[9]);///obvious
     MapLen = *max_element(Instance[0].begin(), Instance[0].end());///determining maximum length of answer
     n = CheckCutNum(Instance[0].size());///determining number of elements in a map
 
@@ -164,10 +244,15 @@ main()
     const clock_t begin_time = clock(); /// Measure time
     GiveMeMapOfCutsPlease(Instance, MapOfCuts);
     cout<<endl<<"Wynik: "<<endl;
-    for(int i = 0; i < MapOfCuts.size(); i++) cout<<MapOfCuts[i]<<" ";
+    if(MapOfCuts.size() == n) for(int i = 0; i < MapOfCuts.size(); i++) cout<<MapOfCuts[i]<<" ";
+    else cout<<"Nie znaleziono rozwiazania!";
     cout<<endl<<"Czas: "<<float(clock() - begin_time) /  CLOCKS_PER_SEC;
 
     cout<<endl;
+
+    CheckAnswer2(MapOfCuts);
+
     system("pause");
     return 0;
+
 };
